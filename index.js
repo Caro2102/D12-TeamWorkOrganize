@@ -2,8 +2,7 @@
 require('dotenv').config();
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
-const {allDepartment,allRoles,allEmployee,addDepartments,addRole,addIntern}=require('./utils/functions');
-
+const cTable = require('console.table');
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -28,10 +27,7 @@ function menu() {
                 "Agregar un empleado",
                 'Actualizar un rol de empleado',
                 'Actualizar gerentes de empleados',
-                'Ver empleados por gerente',
-                'Ver empleados por departamento',
                 'Eliminar departamentos, roles y empleados',
-                "Ver el presupuesto total de un departamento",
                 'Salir',
             ],
         })
@@ -46,33 +42,6 @@ function menu() {
             case 'Ver todos los empleados':
                 allEmployee();
                 break;
-            case 'Agregar un departamento':
-                addDepartments();
-                break;
-            case "Agregar un rol":
-                addRole();
-                break;
-            case 'Agregar un empleado':
-                writeToFile();
-                break;
-            case 'Actualizar un rol de empleado':
-                writeToFile();
-                break;
-            case 'Actualizar gerentes de empleados':
-                writeToFile();
-                break;
-            case 'Ver empleados por gerente':
-                writeToFile();
-                break;
-            case 'Ver empleados por departamento':
-                writeToFile();
-                break;
-            case "Eliminar departamentos, roles y empleados":
-                writeToFile();
-                break;
-            case 'Ver el presupuesto total de un departamento':
-                writeToFile();
-                break;
             case 'Salir':
                 db.end();
                 break;
@@ -85,3 +54,35 @@ db.connect((err) => {
     if (err) throw err;
     menu();
 });
+
+let nameval=/^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/g;
+const confirmname=(name)=>{
+    return !name.match(nameval)||name==''?'Ingrese el nombre del departamento': true
+}
+//Funciones para ver informacion
+allDepartment=()=>{
+    db.query(`SELECT * FROM department`,(err,res)=>{
+        if(err)throw err;
+        console.table(res);
+        menu();
+        }
+)};
+allRoles=()=>{
+    db.query(`SELECT * FROM role`,(err,res)=>{
+        if(err)throw err;
+        console.table(res);
+        menu();
+        }
+)};
+allEmployee=()=>{
+    db.query(`SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, CONCAT(e.first_name,' ',e.last_name) AS manager
+        FROM employee LEFT JOIN employee AS e ON e.id = employee.manager_id 
+        JOIN role ON employee.role_id = role.id 
+        JOIN department ON role.department_id = department.id 
+        ORDER BY employee.id;`,(err,res)=>{
+        if(err)throw err;
+        console.table(res);
+        menu();
+        }
+)};
+

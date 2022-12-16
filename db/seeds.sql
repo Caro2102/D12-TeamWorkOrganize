@@ -27,8 +27,8 @@ INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUES
 -- Employee managers
     ("Elaine", "Vanderbilt", 1, NULL),
-    ("Jerry", "Daniels", 2, 1),
-    ("Edward", "Prescott", 3, 1),
+    ("Jerry", "Daniels", 2, NULL),
+    ("Edward", "Prescott", 3, NULL),
     ("Tony", "Fresco", 4, 2),
 -- Employees with managers
     ("Eliza", "Cain", 5, 2),

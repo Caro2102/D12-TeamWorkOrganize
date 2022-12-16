@@ -51,6 +51,15 @@ function menu() {
             case 'Agregar un empleado':
                 addEmployee();
                 break;
+            case 'Actualizar un rol de empleado':
+                updateRole();
+                break;
+            case 'Actualizar gerentes de empleados':
+                updateManager();
+                break;
+            case "Eliminar departamentos, roles y empleados":
+                deleteE();
+                break;
             case 'Salir':
                 db.end();
                 break;
@@ -350,3 +359,127 @@ updateManager=()=> {
             });
         });
 }
+deleteE=()=>{
+    inquirer
+    .prompt({
+        type: 'list',
+        message: '¿Que quieres eliminar?',
+        name: 'deleteE',
+        choices:['Departamento', 'Role', 'Empleado','Salir', ],
+    }).then((answer) => {
+        switch (answer.deleteE) {
+        case 'Departamento':
+            deletDepartment();
+        break;
+        case 'Role':
+            deletRole();
+            break;
+        case 'Empleado':
+            deletEmpleyee();
+            break;
+        case 'Salir':
+            db.end();
+            break;
+        }
+    });
+    
+}
+deletDepartment=()=>{
+    const deletD={};
+    //Seleccionar nombres de db department
+    db.query('SELECT name from department',(err,res)=>{
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                name: 'departmentN',
+                type: 'list',
+                choices() {
+                    const choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                        choiceArray.push(`${res[i].name}`);
+                    }
+                    return choiceArray;
+                },
+                message: `¿Que departamento quieres eliminar?`,
+            },
+        ]).then(answer => {
+                deletD.name= answer.departmentN;;
+                db.query(
+                    //Borrar de db department donde este el nombre seleccionado de la respuesta
+                    'DELETE FROM department WHERE name = ?',deletD.name,
+                    (err) => {
+                        if (err) throw err;
+                        console.log('El departamento se elimino.');
+                        menu();
+                    }
+                );
+            
+        })
+    });
+}
+deletRole=()=>{
+    //Seleccionar title de db role
+    db.query('SELECT title from role',(err,res)=>{
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                name: 'roleS',
+                type: 'list',
+                choices() {
+                    const choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                        choiceArray.push(`${res[i].title}`);
+                    }
+                    return choiceArray;
+                },
+                message: `¿Que rol quieres eliminar?`,
+            },
+        ]).then(answer => {
+                db.query(
+                    //Borrar de db role donde este el title seleccionado de la respuesta
+                    'DELETE FROM role WHERE title = ?',answer.roleS,
+                    (err) => {
+                        if (err) throw err;
+                        console.log('El rol se elimino.');
+                        menu();
+                    }
+                );
+            
+        })
+    });
+}
+deletEmpleyee=()=>{
+    //Seleccionar nombres de db employee
+    const deletD={};
+    db.query('SELECT * from employee',(err,res)=>{
+        if (err) throw err;
+        inquirer
+        .prompt([
+            {
+                name: 'employeeN',
+                type: 'list',
+                choices() {
+                    const choiceArray = [];
+                    for (let i = 0; i < res.length; i++) {
+                        choiceArray.push(`${res[i].first_name} ${res[i].last_name}`);
+                    }
+                    return choiceArray;
+                },
+                message: `¿Que empleado quieres eliminar?`,
+            },
+        ]).then(answer => {  
+                    db.query(
+                        //Borrar de db employee donde este el nombre seleccionado de la respuesta
+                        'DELETE FROM employee WHERE first_name = ?',answer.employeeN.split(' ')[0],(err) => {
+                        if (err) throw err;
+                        console.log('El empleado se elimino.');
+                        menu();
+                    }
+                );
+            
+        })
+    });
+}
+

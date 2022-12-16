@@ -42,6 +42,15 @@ function menu() {
             case 'Ver todos los empleados':
                 allEmployee();
                 break;
+            case 'Agregar un departamento':
+                addDepartments();
+                break;
+            case "Agregar un rol":
+                addRole();
+                break;
+            case 'Agregar un empleado':
+                addEmployee();
+                break;
             case 'Salir':
                 db.end();
                 break;
@@ -57,7 +66,7 @@ db.connect((err) => {
 
 let nameval=/^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/g;
 const confirmname=(name)=>{
-    return !name.match(nameval)||name==''?'Ingrese el nombre del departamento': true
+    return !name.match(nameval)||name==''?'Ingrese bien el nombre': true
 }
 //Funciones para ver informacion
 allDepartment=()=>{
@@ -85,4 +94,137 @@ allEmployee=()=>{
         menu();
         }
 )};
+//Funciones para agregar informacion
+addDepartments=()=>{
+    inquirer
+        .prompt({
+            type: 'input',
+            message: '¿Cual es el nombre del departamento?',
+            name: 'nameD',
+            validate: confirmname,
+        }).then(answer => {
+            db.query(`INSERT INTO department SET ?`,{
+                name:answer.nameD
+            },(err)=>{
+                if(err)throw err;
+                console.log(`Se agrego ${answer.nameD} a la base de datos`)
+                menu();
+            });
+        })
+}
+addRole=()=>{
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                message: '¿Cual es el nombre del rol',
+                name: 'nameR',
+                validate: confirmname,
+            },
+            {
+                type: 'input',
+                message: '¿Cual es el salario del rol?',
+                name: 'salaryR',
+            },
+            {
+                type: 'input',
+                message: '¿A que id de departamento pertenece el rol?',
+                name: 'departmentR',
+            },
+        ]).then(answer => {
+            db.query(`INSERT INTO role SET ?`,{
+                title:answer.nameR,
+                salary:answer.salaryR,
+                department_id:answer.departmentR
+            },(err)=>{
+                if(err)throw err;
+                console.log(`Se agrego ${answer.nameR} a la base de datos`)
+                menu();
+            });
+        })
+}
+addEmployee=()=> {
+    const newEmployee = {};
+    db.query('SELECT * FROM role', (err, res) => {
+        if (err) throw err;
+        inquirer
+            .prompt([
+                {
+                    name: 'first_name',
+                    type: 'input',
+                    message: `¿Cual es el nombre del empleado?`,
+                    validate: confirmname,
+                },
+                {
+                    name: 'last_name',
+                    type: 'input',
+                    message: `¿Cual es el apellido del empleado?`,
+                    validate: confirmname,
+                },
+                {
+                    name: 'employee_role',
+                    type: 'list',
+                    // Obtener title de db role
+                    choices() {
+                        const roleArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            roleArray.push(res[i].title);
+                        }
+                        return roleArray;
+                    },
+                    message: `¿Cual es el rol del empleado?`,
+                },
+            ])
+            .then((answer) => {
+                // Agregar nombre y apellido al objeto
+                newEmployee.first_name = answer.first_name;
+                newEmployee.last_name = answer.last_name;
+
+                // Tomar role_id de db role con respuesta del rol
+                db.query('SELECT * FROM role WHERE title = ?', answer.employee_role, (err, res) => {
+                    if (err) throw err;
+
+                    newEmployee.role_id = res[0].id;
+                });
+
+                // Buscar empleados de db employee
+                db.query('SELECT * FROM employee', (err, res) => {
+                    if (err) throw err;
+                    inquirer
+                        .prompt([
+                            {
+                                name: 'manager_name',
+                                type: 'list',
+                                choices() {
+                                    const choiceArray = [];
+                                    for (let i = 0; i < res.length; i++) {
+                                        choiceArray.push(
+                                            `${res[i].first_name} ${res[i].last_name}`
+                                        );
+                                    }
+                                    return choiceArray;
+                                },
+                                message: "¿Quien es el manager del empleado?",
+                            },
+                        ])
+                        .then((answer) => {
+                            db.query(
+                                //Tomar manager.id de db employee con respuesta del nombre empleado
+                                'SELECT id FROM employee WHERE first_name = ?',
+                                answer.manager_name.split(' ')[0],
+                                (err, res) => {
+                                    if (err) throw err;
+                                    newEmployee.manager_id = res[0].id;
+                                    db.query('INSERT INTO employee SET ?', newEmployee, (err) => {
+                                        if (err) throw err;
+                                        console.log('Se agrego empleado');
+                                        menu();
+                                    });
+                                }
+                            );
+                        });
+                });
+            });
+    });
+}
 

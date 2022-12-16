@@ -180,7 +180,7 @@ addEmployee=()=> {
                 newEmployee.first_name = answer.first_name;
                 newEmployee.last_name = answer.last_name;
 
-                // Tomar role_id de db role con respuesta del rol
+                //Tomar id del tittle seleccionado para que role.id sea ese id 
                 db.query('SELECT * FROM role WHERE title = ?', answer.employee_role, (err, res) => {
                     if (err) throw err;
 
@@ -209,7 +209,7 @@ addEmployee=()=> {
                         ])
                         .then((answer) => {
                             db.query(
-                                //Tomar manager.id de db employee con respuesta del nombre empleado
+                                //Tomar id del nombre seleccionado para que el manager_id sea ese id 
                                 'SELECT id FROM employee WHERE first_name = ?',
                                 answer.manager_name.split(' ')[0],
                                 (err, res) => {
@@ -228,3 +228,125 @@ addEmployee=()=> {
     });
 }
 
+updateRole=()=> {
+    const update = {};
+    db.query(
+        //Seleccionar tabla employee para obtener nombres y role title
+        `SELECT employee.id, employee.first_name, employee.last_name, role.title, role.salary, department.name AS department, 
+        emp.first_name AS manager FROM employee 
+        LEFT JOIN employee AS emp ON emp.id = employee.manager_id 
+        JOIN role ON employee.role_id = role.id 
+        JOIN department ON role.department_id = department.id 
+        ORDER BY employee.id`,
+        (err,res) => {
+            if (err) throw err;
+            inquirer
+                .prompt([
+                    {
+                        name: 'updEmployee',
+                        type: 'list',
+                        choices() {
+                            const choiceArray = [];
+                            for (let i = 0; i < res.length; i++) {
+                                choiceArray.push(`${res[i].first_name} ${res[i].last_name}`);
+                            }
+                            return choiceArray;
+                        },
+                        message: `¿Que rol de empleado quieres actualizar?`,
+                    },
+                ])
+                .then((answer) => {
+                    //agregar solo nombre a objeto
+                    update.first_name = answer.updEmployee.split(' ')[0];
+                    db.query('SELECT * FROM role', (err, res) => {
+                        if (err) throw err;
+                        inquirer
+                            .prompt([
+                                {
+                                    name: 'roleAsign',
+                                    type: 'list',
+                                    choices() {
+                                        const choiceArray = [];
+                                        for (let i = 0; i < res.length; i++) {
+                                            choiceArray.push(res[i].title);
+                                        }
+                                        return choiceArray;
+                                    },
+                                    message: `¿Que rol quieres asignarle al empleado `,
+                                },
+                            ])
+                            .then((answer) => {
+                                //Tomar id del nombre seleccionado para que role_id sea de ese id 
+                                db.query('SELECT * FROM role WHERE title = ?', answer.roleAsign, (err, res) => {
+                                    if (err) throw err;
+                                    update.role_id = res[0].id;
+                                    db.query(
+                                        //Actualizar role_id de db employee donde el nombre sea la respuesta 
+                                        'UPDATE employee SET role_id = ? WHERE first_name = ?',
+                                        [update.role_id, update.first_name],
+                                        (err) => {
+                                            if (err) throw err;
+                                            console.log('El empleado se actualizo.');
+                                            menu();
+                                        }
+                                    );
+                                });
+                            });
+                    });
+                });
+        }
+    );
+}
+updateManager=()=> {
+    const newManager = {};
+    db.query(
+        `SELECT * FROM employee`,
+        (err,res) => {
+            if (err) throw err;
+            inquirer
+            .prompt([
+                {
+                    name: 'changeManager',
+                    type: 'list',
+                    choices() {
+                        const choiceArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            choiceArray.push(`${res[i].first_name} ${res[i].last_name}`);
+                        }
+                        return choiceArray;
+                    },
+                    message: `¿Cual empleado tiene nuevo manager?`,
+                },
+                {
+                    name: 'newMan',
+                    type: 'list',
+                    choices() {
+                        const choiceArray = [];
+                        for (let i = 0; i < res.length; i++) {
+                            choiceArray.push(`${res[i].first_name} ${res[i].last_name}`);
+                        }
+                        return choiceArray;
+                    },
+                    message: `¿Quien es su nuevo manager?`,
+                },
+            ])
+            .then((answer) => {
+                newManager.first_name = answer.changeManager.split(' ')[0];
+                    //Tomar id del nombre seleccionado para que el manager_id sea de ese id 
+                db.query('SELECT * FROM employee WHERE first_name = ?', answer.newMan.split(' ')[0], (err, res) => {
+                    if (err) throw err;
+                    newManager.manager_id = res[0].id;
+                    db.query(
+                        //Actualizar manager_id de db employee donde el nombre sea la respuesta 
+                        'UPDATE employee SET manager_id = ? WHERE first_name = ?',
+                        [newManager.manager_id, newManager.first_name],
+                        (err) => {
+                            if (err) throw err;
+                            console.log('El manager se actualizo.');
+                            menu();
+                        }
+                    );
+                });
+            });
+        });
+}

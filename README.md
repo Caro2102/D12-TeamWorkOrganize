@@ -38,6 +38,7 @@ Aplicación para poder ver y gestionar los departamentos, roles y empleados de m
     - Escribir **`mysql -u root -p`** para conectarse a MySQL CLI e igresar contraseña.
     - Escribir **`source schema.sql`** para crear la base de datos MySQL (Asegurarse que la ruta sea correcta).
     - Escribir **`source seeds.sql`** para popular la base de datos MySQL (Asegurarse que la ruta sea correcta).
+    - Dirijirse a la raíz de la carpeta y crear archivo **`.env`**con la variable **`DB_PASSWORD='tu contraseña'`**  para proteger las credenciales de la base de datos y poder conectarse.
     - Escribir **`npm start`** para ejecutar el archivo.
 
 ---
